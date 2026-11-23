@@ -369,9 +369,9 @@
 
     h("What was collected");
     p(`Posts were collected once, on ${m.collected_at}, through Bluesky's search API (searchPosts, English, newest first). ` +
-      `The 52 weeks from ${m.window_start} to ${m.window_end} were searched one week at a time, reading up to ` +
-      `${m.max_pages_per_query_week * 100} posts per search term per week. In busy weeks a popular term can hit that limit, ` +
-      `and then only the latest posts of that week are seen.`);
+      `The 52 weeks from ${m.window_start} to ${m.window_end} were searched one week at a time. ` +
+      `Each search term contributed at most its 100 most recent posts per week. In weeks when a term matched more than 100 posts, ` +
+      `only the latest ones were seen, so each week's sample leans toward the last days of that week.`);
     p("Search terms:");
     root.append("p").append("code").text(m.queries.join("   "));
     p(`Of ${fmtInt(fc.seen)} posts returned: ${fmtInt(fc.opted_out)} were skipped because their authors ask not to be shown to ` +
