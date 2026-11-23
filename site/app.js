@@ -51,7 +51,7 @@
     d.meta.themes.forEach((t) => themeSel.append("option").attr("value", t.key).text(t.label));
     themeSel.append("option").attr("value", "none").text("None of these");
     const kSel = d3.select("#f-k");
-    d.meta.topic_counts.forEach((k, i) => kSel.append("option").attr("value", i).text(`${k} topics`));
+    d.meta.topic_counts.forEach((k, i) => kSel.append("option").attr("value", i).text(`${k} groups`));
     $("f-k").value = String(state.k);
 
     bindControls();
@@ -97,17 +97,19 @@
     const matching = posts.filter((p) => passes(p));
     renderStatus(matching);
     renderTimeline();
+    renderThemes();
     renderSentiment();
     renderTopics();
     if (resample) renderExcerpts();
     $("clear-range").hidden = !state.range;
     $("f-band").value = state.band;
+    $("f-theme").value = state.theme;
   }
 
   function renderStatus(matching) {
     const parts = [`Showing ${fmtInt(matching.length)} of ${fmtInt(posts.length)} posts`];
     if (state.range) parts.push(`weeks of ${fmtShort(parseDay(state.range[0]))} – ${fmtWeek(parseDay(state.range[1]))}`);
-    if (state.topic !== null) parts.push(`topic ${state.topic + 1}`);
+    if (state.topic !== null) parts.push(`word group ${state.topic + 1}`);
     $("status").textContent = parts.join(" · ");
   }
 
@@ -263,7 +265,7 @@
 
     d3.select(el).selectAll("*").remove();
     const svg = d3.select(el).append("svg").attr("viewBox", [0, 0, width, height]).attr("height", height)
-      .attr("role", "img").attr("aria-label", "Histogram of VADER sentiment scores; details in the table below.");
+      .attr("role", "img").attr("aria-label", "Histogram of tone scores from −1 to +1; details in the table below.");
     svg.append("g").attr("class", "gridline axis").attr("transform", `translate(${margin.left},0)`)
       .call(d3.axisLeft(y).ticks(4).tickSize(-(width - margin.left - margin.right)).tickFormat(fmtInt));
     const gx = svg.append("g").attr("class", "axis").attr("transform", `translate(0,${height - margin.bottom})`)
@@ -287,14 +289,54 @@
       .on("click", (event, b) => { state.band = state.band === b.band ? "all" : b.band; update(true); });
 
     const rows = bins.map((b, i) => [`${fmtScore(b.x0)} to ${fmtScore(b.x1)}`, BAND_LABEL[b.band], match[i], all[i]]);
-    table($("sentiment-table"), ["Score", "Band", "Matching", "In sample"], rows);
+    table($("sentiment-table"), ["Tone score", "Tone", "Matching", "In sample"], rows);
+  }
+
+  // ---------- themes ----------
+  // Plain-language summary of each theme's keywords (the exact patterns are in the methods section).
+  const THEME_HINT = {
+    detectors: "mentions Turnitin, GPTZero, AI detectors, or posts being flagged",
+    cheating: "mentions cheating, plagiarism or academic integrity",
+    teachers: "mentions teachers or professors, class AI policies, blue books, handwritten or oral exams",
+    none: "mentions AI and education, but none of the keywords above",
+  };
+
+  function renderThemes() {
+    const items = data.meta.themes.map((t) => ({ key: t.key, label: t.label }))
+      .concat([{ key: "none", label: "None of these themes" }]);
+    const has = (p, key) => (key === "none" ? p.th.length === 0 : p.th.includes(key));
+    const matching = posts.filter((p) => passes(p, "theme"));
+    const all = new Map(items.map((t) => [t.key, posts.filter((p) => has(p, t.key)).length]));
+    const match = new Map(items.map((t) => [t.key, matching.filter((p) => has(p, t.key)).length]));
+    const max = d3.max(all.values()) || 1;
+
+    const rows = d3.select("#themes").selectAll("button.topic").data(items, (t) => t.key).join((enter) => {
+      const b = enter.append("button").attr("type", "button").attr("class", "topic");
+      const head = b.append("span").attr("class", "topic-head");
+      head.append("span").attr("class", "topic-name");
+      head.append("span").attr("class", "topic-count");
+      b.append("span").attr("class", "topic-words");
+      const bar = b.append("span").attr("class", "topic-bar");
+      bar.append("i").attr("class", "all");
+      bar.append("i").attr("class", "match");
+      return b;
+    });
+    rows.classed("active", (t) => state.theme === t.key)
+      .classed("dim", (t) => state.theme !== "all" && state.theme !== t.key)
+      .attr("aria-pressed", (t) => state.theme === t.key)
+      .on("click", (event, t) => { state.theme = state.theme === t.key ? "all" : t.key; update(true); });
+    rows.select(".topic-name").text((t) => t.label);
+    rows.select(".topic-count").text((t) => `${fmtInt(match.get(t.key))} matching · ${fmtInt(all.get(t.key))} in sample`);
+    rows.select(".topic-words").text((t) => THEME_HINT[t.key] || "");
+    rows.select(".all").style("width", (t) => `${(all.get(t.key) / max) * 100}%`);
+    rows.select(".match").style("width", (t) => `${(match.get(t.key) / max) * 100}%`);
   }
 
   // ---------- topics ----------
   function renderTopics() {
     const k = data.meta.topic_counts[state.k];
     const topics = data.topics[String(k)];
-    $("topics-title").textContent = `Topics (LDA, ${k} topics)`;
+    $("topics-title").textContent = `Word groups (${k} groups)`;
     const all = d3.rollup(posts, (v) => v.length, (p) => p.t[state.k]);
     const match = d3.rollup(posts.filter((p) => passes(p, "topic")), (v) => v.length, (p) => p.t[state.k]);
     const nMatch = d3.sum(match.values());
@@ -315,7 +357,7 @@
       .classed("dim", (t) => state.topic !== null && state.topic !== t.id)
       .attr("aria-pressed", (t) => state.topic === t.id)
       .on("click", (event, t) => { state.topic = state.topic === t.id ? null : t.id; update(true); });
-    rows.select(".topic-name").text((t) => `Topic ${t.id + 1}`);
+    rows.select(".topic-name").text((t) => `Group ${t.id + 1}`);
     rows.select(".topic-count").text((t) => {
       const m = match.get(t.id) || 0;
       return `${fmtInt(m)} matching (${nMatch ? fmtPct(m / nMatch) : "0%"}) · ${fmtInt(all.get(t.id) || 0)} in sample`;
@@ -347,8 +389,8 @@
       m.selectAll("*").remove();
       m.append("span").text(`Week of ${fmtShort(parseDay(p.week))}`);
       m.append("span").text(p.r ? "Reply" : "Post");
-      m.append("span").text(p.t[state.k] >= 0 ? `Topic ${p.t[state.k] + 1}` : "No topic");
-      m.append("span").text(`Sentiment ${fmtScore(p.s)}`);
+      m.append("span").text(p.t[state.k] >= 0 ? `Word group ${p.t[state.k] + 1}` : "No word group");
+      m.append("span").text(`Tone ${fmtScore(p.s)}`);
       p.th.forEach((t) => m.append("span").attr("class", "tag").text(themeLabel[t]));
     });
   }
@@ -385,17 +427,17 @@
     p("Themes come from the words in each post, not from the search term that found it. A post can belong to several themes or to none.");
     codeList(m.themes.map((t) => [t.label, t.pattern]));
 
-    h("Sentiment");
-    p(`VADER, a word-list sentiment scorer built for social media, scored the full text of each post (with mentions and links removed). ` +
+    h("Tone of voice (sentiment)");
+    p(`The tone score comes from VADER, a word-list sentiment scorer built for social media. It scored the full text of each post (with mentions and links removed). ` +
       `Scores of −${cutoff} or lower count as negative, +${cutoff} or higher as positive, and anything between as neutral. ` +
       `VADER misreads sarcasm, and it rates words like “cheating”, “plagiarism” or “false” as negative even when a post is calm ` +
-      `or approving. Read sentiment as a rough sorting aid, not a measure of opinion. The score is for the whole post, ` +
+      `or approving. It measures the tone of the wording, not the writer's opinion, so read it as a rough sorting aid. The score is for the whole post, ` +
       `so it can differ from the tone of the excerpt you see.`);
 
-    h("Topics");
+    h("Word groups (topics)");
     p(`LDA (latent Dirichlet allocation, from scikit-learn) was fit three times, with ${m.topic_counts.join(", ")} topics, ` +
       `on word counts (${fmtInt(m.vocab_size)} distinct words). Common English words were removed first, along with generic words like ` +
-      `“ai” and “chatgpt” that appear in nearly every post. Each post is assigned to its single most likely topic. ` +
+      `“ai” and “chatgpt” that appear in nearly every post. Each post is assigned to its single most likely topic, shown on this page as a numbered word group. ` +
       `A topic is a statistical cluster of words that tend to occur together. It is not necessarily a subject people would recognise, ` +
       `and changing the number of topics reshuffles them. LDA is designed for long documents and is unreliable on short posts. ` +
       `Topics are numbered, not named, so that interpreting them stays with you.`);

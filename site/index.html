@@ -13,6 +13,9 @@
     <h1>AI in education on Bluesky</h1>
     <p class="lede" id="lede">An explorer for Bluesky posts about AI detectors, students cheating with AI, and how teachers respond.</p>
     <p class="note">This page shows what was written. It does not draw conclusions. Read <a href="#methods">how this was made</a> before interpreting anything.</p>
+    <p class="note"><strong>How to use this page:</strong> choose filters in the row below, or click a bar or row in any chart. Every chart then updates.
+      Throughout the page, <span class="key"><i class="sw sw-all"></i>gray</span> means all the posts in the sample and
+      <span class="key"><i class="sw sw-match"></i>blue</span> means the posts that match your current filters.</p>
   </header>
 
   <div id="empty" class="empty" hidden>
@@ -24,9 +27,9 @@
       <label>Theme
         <select id="f-theme"></select>
       </label>
-      <label>Sentiment
+      <label>Tone
         <select id="f-band">
-          <option value="all">All</option>
+          <option value="all">Any tone</option>
           <option value="neg">Negative</option>
           <option value="neu">Neutral</option>
           <option value="pos">Positive</option>
@@ -39,7 +42,7 @@
           <option value="reply">Replies</option>
         </select>
       </label>
-      <label>Topic model
+      <label>Word groups
         <select id="f-k"></select>
       </label>
       <label class="grow">Search excerpts
@@ -53,8 +56,8 @@
       <article class="card wide">
         <div class="card-head">
           <div>
-            <h2>Sampled posts per week</h2>
-            <p class="sub">Drag across the chart to pick a date range. Each week was sampled to about the same size, so bar heights show the sample, not how much Bluesky posted.</p>
+            <h2>Posts per week</h2>
+            <p class="sub">Drag across the chart to look at a range of weeks.</p>
           </div>
           <button id="clear-range" type="button" class="ghost" hidden>Clear dates</button>
         </div>
@@ -63,12 +66,24 @@
           <span><i class="sw sw-match"></i>Matching filters</span>
         </div>
         <div id="timeline" class="chart"></div>
-        <details><summary>Table</summary><div id="timeline-table" class="table-wrap"></div></details>
+        <p class="read"><strong>How to read this:</strong> each bar is one week. The gray bar is every post sampled that week, and the blue part is the posts that match your filters. Every week was sampled to about the same size, so the gray bars are all about the same height. They don't show how much people posted. Compare the blue parts with each other.</p>
+        <details><summary>Show as a table</summary><div id="timeline-table" class="table-wrap"></div></details>
       </article>
 
       <article class="card">
-        <h2>Sentiment score (VADER)</h2>
-        <p class="sub">−1 is most negative, +1 most positive. Click a bar to filter by its band. VADER often misreads sarcasm and topic words like “cheating”.</p>
+        <h2>Posts in each theme</h2>
+        <p class="sub">Click a row to show only that theme.</p>
+        <div class="legend">
+          <span><i class="sw sw-all"></i>Whole sample</span>
+          <span><i class="sw sw-match"></i>Matching filters</span>
+        </div>
+        <div id="themes" class="rows"></div>
+        <p class="read"><strong>How to read this:</strong> each row is a theme, and longer bars mean more posts. A post is put in a theme if it uses certain keywords, listed under each theme name. One post can mention several themes, so the rows add up to more than the total number of posts.</p>
+      </article>
+
+      <article class="card">
+        <h2>Tone of voice</h2>
+        <p class="sub">Click a bar to show only posts with that tone.</p>
         <div class="legend">
           <span><i class="sw sw-all"></i>Whole sample</span>
           <span><i class="sw sw-neg"></i>Negative</span>
@@ -76,17 +91,19 @@
           <span><i class="sw sw-pos"></i>Positive</span>
         </div>
         <div id="sentiment" class="chart"></div>
-        <details><summary>Table</summary><div id="sentiment-table" class="table-wrap"></div></details>
+        <p class="read"><strong>How to read this:</strong> a program gave each post a tone score from −1 (very negative wording) to +1 (very positive wording), based on the words it uses. Taller bars mean more posts with that score. The score describes tone of voice, not opinion. A post that supports a policy can still score negative if it uses words like “cheating” or “problem”, and the program does not understand sarcasm.</p>
+        <details><summary>Show as a table</summary><div id="sentiment-table" class="table-wrap"></div></details>
       </article>
 
-      <article class="card">
-        <h2 id="topics-title">Topics</h2>
-        <p class="sub">Word groups found by LDA, listed by their most likely words. They are unnamed on purpose: deciding what a group means is your call. Click one to filter.</p>
+      <article class="card wide">
+        <h2 id="topics-title">Word groups</h2>
+        <p class="sub">Click a group to show only its posts. Change the number of groups with the “Word groups” filter.</p>
         <div class="legend">
           <span><i class="sw sw-all"></i>Whole sample</span>
           <span><i class="sw sw-match"></i>Matching filters</span>
         </div>
-        <div id="topics" class="topics"></div>
+        <div id="topics" class="rows"></div>
+        <p class="read"><strong>How to read this:</strong> a program sorted the posts into groups by which words tend to appear together, and each row lists the most common words in one group. Longer bars mean more posts. The groups are numbered rather than named because the program doesn't know what they mean; reading the words and the excerpts is how you decide. Asking for a different number of groups reshuffles them.</p>
       </article>
 
       <article class="card wide">
@@ -98,6 +115,7 @@
           <button id="shuffle" type="button">Shuffle</button>
         </div>
         <ul id="excerpts" class="excerpts"></ul>
+        <p class="read"><strong>How to read this:</strong> these are short pieces of real posts, picked at random from the posts that match your filters. They never show a whole post, and names of accounts and links have been removed. Under each excerpt are its week, whether it was a reply, its word group, its tone score and its themes.</p>
       </article>
     </section>
   </div>
