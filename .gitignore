@@ -1,0 +1,4 @@
+__pycache__/
+*.pyc
+# Full post text must never be committed.
+raw*.json

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AI in Education on Bluesky</title>
+  <meta name="description" content="An explorer for a sample of Bluesky posts about AI detectors, cheating with AI, and how teachers respond.">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header class="intro">
+    <h1>AI in education on Bluesky</h1>
+    <p class="lede" id="lede">An explorer for Bluesky posts about AI detectors, students cheating with AI, and how teachers respond.</p>
+    <p class="note">This page shows what was written. It does not draw conclusions. Read <a href="#methods">how this was made</a> before interpreting anything.</p>
+  </header>
+
+  <div id="empty" class="empty" hidden>
+    <p><strong>No data yet.</strong> Run the <em>Collect and publish</em> workflow in GitHub Actions to collect the sample.</p>
+  </div>
+
+  <div id="app" hidden>
+    <section class="filters" aria-label="Filters">
+      <label>Theme
+        <select id="f-theme"></select>
+      </label>
+      <label>Sentiment
+        <select id="f-band">
+          <option value="all">All</option>
+          <option value="neg">Negative</option>
+          <option value="neu">Neutral</option>
+          <option value="pos">Positive</option>
+        </select>
+      </label>
+      <label>Post type
+        <select id="f-reply">
+          <option value="all">Posts and replies</option>
+          <option value="post">Top-level posts</option>
+          <option value="reply">Replies</option>
+        </select>
+      </label>
+      <label>Topic model
+        <select id="f-k"></select>
+      </label>
+      <label class="grow">Search excerpts
+        <input id="f-q" type="search" placeholder="e.g. blue books" autocomplete="off">
+      </label>
+      <button id="reset" type="button" class="ghost">Reset</button>
+    </section>
+    <p class="status" id="status" aria-live="polite"></p>
+
+    <section class="grid">
+      <article class="card wide">
+        <div class="card-head">
+          <div>
+            <h2>Sampled posts per week</h2>
+            <p class="sub">Drag across the chart to pick a date range. Each week was sampled to about the same size, so bar heights show the sample, not how much Bluesky posted.</p>
+          </div>
+          <button id="clear-range" type="button" class="ghost" hidden>Clear dates</button>
+        </div>
+        <div class="legend">
+          <span><i class="sw sw-all"></i>Whole sample</span>
+          <span><i class="sw sw-match"></i>Matching filters</span>
+        </div>
+        <div id="timeline" class="chart"></div>
+        <details><summary>Table</summary><div id="timeline-table" class="table-wrap"></div></details>
+      </article>
+
+      <article class="card">
+        <h2>Sentiment score (VADER)</h2>
+        <p class="sub">−1 is most negative, +1 most positive. Click a bar to filter by its band. VADER often misreads sarcasm and topic words like “cheating”.</p>
+        <div class="legend">
+          <span><i class="sw sw-all"></i>Whole sample</span>
+          <span><i class="sw sw-neg"></i>Negative</span>
+          <span><i class="sw sw-neu"></i>Neutral</span>
+          <span><i class="sw sw-pos"></i>Positive</span>
+        </div>
+        <div id="sentiment" class="chart"></div>
+        <details><summary>Table</summary><div id="sentiment-table" class="table-wrap"></div></details>
+      </article>
+
+      <article class="card">
+        <h2 id="topics-title">Topics</h2>
+        <p class="sub">Word groups found by LDA, listed by their most likely words. They are unnamed on purpose: deciding what a group means is your call. Click one to filter.</p>
+        <div class="legend">
+          <span><i class="sw sw-all"></i>Whole sample</span>
+          <span><i class="sw sw-match"></i>Matching filters</span>
+        </div>
+        <div id="topics" class="topics"></div>
+      </article>
+
+      <article class="card wide">
+        <div class="card-head">
+          <div>
+            <h2>Excerpts</h2>
+            <p class="sub" id="excerpt-sub"></p>
+          </div>
+          <button id="shuffle" type="button">Shuffle</button>
+        </div>
+        <ul id="excerpts" class="excerpts"></ul>
+      </article>
+    </section>
+  </div>
+
+  <section id="methods" class="methods">
+    <h2>How this was made</h2>
+    <div id="methods-body"><p>Methods appear once data has been collected.</p></div>
+  </section>
+</main>
+<div id="tooltip" class="tooltip" role="tooltip" hidden></div>
+<script src="vendor/d3-7.9.0.min.js"></script>
+<script src="app.js"></script>
+</body>
+</html>

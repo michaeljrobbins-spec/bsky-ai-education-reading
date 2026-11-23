@@ -1,0 +1,4 @@
+requests==2.32.5
+vaderSentiment==3.3.2
+scikit-learn==1.7.2
+numpy>=1.26,<3
